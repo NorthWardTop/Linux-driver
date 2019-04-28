@@ -1,0 +1,1 @@
+cmd_/mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_drv.o := arm-linux-ld -EL    -r -o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_drv.o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param.o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_2.o 

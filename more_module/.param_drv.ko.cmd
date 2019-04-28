@@ -1,0 +1,1 @@
+cmd_/mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_drv.ko := arm-linux-ld -EL -r  -T /home/lyh/my-work/6818/6818GEC/kernel/scripts/module-common.lds --build-id  -o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_drv.ko /mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_drv.o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/more_module/param_drv.mod.o
