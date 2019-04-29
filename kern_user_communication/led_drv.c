@@ -4,7 +4,7 @@
  * @LastEditors: northward
  * @Description: 内核和用户空间通信
  * @Date: 2019-04-29 19:35:08
- * @LastEditTime: 2019-04-29 20:18:04
+ * @LastEditTime: 2019-04-29 20:47:01
  */
 
 #include <linux/kernel.h>
@@ -13,6 +13,7 @@
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/uaccess.h>
+#include <linux/errno.h>
 
 
 
@@ -47,7 +48,7 @@ static ssize_t gec6818_led_write(struct file *fl, const char __user *buf, size_t
 }
 
 /**
- * @description: 
+ * @description: read函数, 数据从内核到应用层, copy_to_user();
  * @param {type} 
  * @return: 
  */

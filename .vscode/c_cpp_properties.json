@@ -4,17 +4,18 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "F:/SI/pak/include**",
-                "F:/SI/pak/6818inc/include/**"
+                "F:/SI/pak/include/**",
+				"F:/SI/EmbeddedStu/Linux-driver/kernel/include/",
+				"F:/SI/EmbeddedStu/Linux-driver/kernel/include/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:\\\\MinGW\\\\bin\\\\g++.exe",
+            "compilerPath": "C:\\\\\\\\MinGW\\\\\\\\bin\\\\\\\\g++.exe",
             "cppStandard": "c++17",
-            "intelliSenseMode": "clang-x64",
+            "intelliSenseMode": "gcc-x64",
             "cStandard": "c11"
         }
     ],

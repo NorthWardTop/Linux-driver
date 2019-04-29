@@ -1,0 +1,1 @@
+cmd_/mnt/hgfs/SI/EmbeddedStu/Linux-driver/auto-create-node/led_drv.ko := arm-linux-ld -EL -r  -T /home/lyh/my-work/6818/6818GEC/kernel/scripts/module-common.lds --build-id  -o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/auto-create-node/led_drv.ko /mnt/hgfs/SI/EmbeddedStu/Linux-driver/auto-create-node/led_drv.o /mnt/hgfs/SI/EmbeddedStu/Linux-driver/auto-create-node/led_drv.mod.o
