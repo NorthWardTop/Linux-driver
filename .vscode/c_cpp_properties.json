@@ -4,6 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+                "F:/SI/pak/include**",
                 "F:/SI/pak/6818inc/include/**"
             ],
             "defines": [
