@@ -5,8 +5,8 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "F:/SI/pak/include/**",
-				"F:/SI/EmbeddedStu/Linux-driver/kernel/include/",
-				"F:/SI/EmbeddedStu/Linux-driver/kernel/include/**"
+                "F:/SI/pak/include/",
+                "F:/SI/pak/include/**"
             ],
             "defines": [
                 "_DEBUG",
