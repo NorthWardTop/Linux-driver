@@ -4,7 +4,7 @@
  * @LastEditors: northward
  * @Description: 本应用程序用于测试LED和KEY驱动程序
  * @Date: 2019-05-01 15:48:23
- * @LastEditTime: 2019-05-01 20:15:12
+ * @LastEditTime: 2019-05-02 19:46:39
  */
 #include <stdio.h>
 #include <sys/types.h>
@@ -29,6 +29,12 @@ int main(int argc, char **argv)
 {
 	int fd_led=-1,fd_key,ret=-1, len=0, i=0;
 	
-	fd=open("/dev/LEDs", );
+	fd_led=open("/dev/LEDs", O_WRONLY);
+	fd_key=open("/dev/KEYs", O_RDONLY);
+	if(fd_led<0 || fd_key<0)
+		perror("open LEDs/KEYs error\n");
+
+
 	
+
 }
