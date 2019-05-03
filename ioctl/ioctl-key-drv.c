@@ -60,7 +60,7 @@ long gec6818_key_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 	switch(cmd)
 	{
 		case GEC6818_KALL_STAT:
-			for(i=0;i<4;++i)
+			for(i=0;i<4;++i) //k2 k3 k4 k5
 				val |= (gpio_get_value(key_info_tab[i].num)?0:1)<<i;
 
 		case GEC6818_KEY2_STAT:
