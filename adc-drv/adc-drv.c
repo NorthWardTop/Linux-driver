@@ -12,7 +12,7 @@
  * 		打开设备LED和K, 使用ioctl执行指令去读K设备值或写LED设备值
  *		
  * @Date: 2019-05-01 15:47:55
- * @LastEditTime: 2019-05-03 15:47:27
+ * @LastEditTime: 2019-05-03 16:43:35
  */
 
 #include <linux/kernel.h>
@@ -29,13 +29,19 @@
 #include <cfg_type.h>
 #include <linux/miscdevice.h>
 #include <linux/ioctl.h>
+#include <linux/ioport.h>
 
 
-#define DEVICE_NAME			"LEDs"
-#define LED_MINOR			131
+static struct cdev gec6818_adc_cdev;
+static dev_t dev_num;
+static struct class *adc_class;
+static struct device *adc_device;
 
-#define GEC6818_LED_ON		_IOW('L', 1, unsigned long)
-#define GEC6818_LED_OFF		_IOW('L', 2, unsigned long)
+static void __iomem *adc_base_va;
+static void __iomem *adc_con_va; //控制寄存器
+static void __iomem *adc_dat_va;
+static void __iomem *adc_pre_va; //预分频寄存器
+
 
 struct led_gpio_info{
 	unsigned int num;
@@ -50,7 +56,7 @@ static const struct led_gpio_info led_info_tab[4]={
 };
 
 
-long gec6818_led_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
+long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 {
 	//获取当前LED灯下标
 	unsigned long index=arg-7;
@@ -76,7 +82,7 @@ long gec6818_led_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
  * @param {type} 
  * @return: 
  */
-static ssize_t gec6818_led_write(struct file *fl, const char __user *buf, size_t len, loff_t *off)
+static ssize_t gec6818_adc_write(struct file *fl, const char __user *buf, size_t len, loff_t *off)
 {
 	int ret=-1;
 	char kbuf[64]={};
@@ -99,7 +105,7 @@ static ssize_t gec6818_led_write(struct file *fl, const char __user *buf, size_t
  * @param {type} 
  * @return: 
  */
-static ssize_t gec6818_led_read(struct file *fl, char __user *buf, size_t len, loff_t *offs)
+static ssize_t gec6818_adc_read(struct file *fl, char __user *buf, size_t len, loff_t *offs)
 {
 	int ret=-1;
 	char kbuf[64]="I am from kernel data\n";
@@ -117,7 +123,7 @@ static ssize_t gec6818_led_read(struct file *fl, char __user *buf, size_t len, l
 } 
 
 //打开
-static int gec6818_led_open(struct inode *ino, struct file *f)
+static int gec6818_adc_open(struct inode *ino, struct file *f)
 {
 	int i=0;
 	//配置对应gpio为输出模式
@@ -128,30 +134,30 @@ static int gec6818_led_open(struct inode *ino, struct file *f)
 }
 
 //关闭
-static int gec6818_led_release(struct inode *i, struct file *f)
+static int gec6818_adc_release(struct inode *i, struct file *f)
 {
 	printk("LED closed\n");
 	return 0;
 }
 
-static const struct file_operations gec6818_led_fops={
+static const struct file_operations gec6818_adc_fops={
 	.owner		= THIS_MODULE,
-	.write		= gec6818_led_write,
-	.read 		= gec6818_led_read,
-	.open		= gec6818_led_open,
-	.release 	= gec6818_led_release,
-	.unlocked_ioctl = gec6818_led_ioctl
+	.write		= gec6818_adc_write,
+	.read 		= gec6818_adc_read,
+	.open		= gec6818_adc_open,
+	.release 	= gec6818_adc_release,
+	.unlocked_ioctl = gec6818_adc_ioctl
 };
 
-static struct miscdevice gec6818_led_miscdev={
+static struct miscdevice gec6818_adc_miscdev={
 	.minor		= MISC_DYNAMIC_MINOR,
 	.name		= DEVICE_NAME,
-	.fops		= &gec6818_led_fops
+	.fops		= &gec6818_adc_fops
 };
 
-static int __init gec6818_led_init(void)
+static int __init gec6818_adc_init(void)
 {
-	int ret=misc_register(&gec6818_led_miscdev);
+	int ret=misc_register(&gec6818_adc_miscdev);
 	if(ret<0)
 	{
 		printk("misc_register failed\n");
@@ -163,13 +169,13 @@ register_failed:
 	return -1;
 }
 
-static void __exit gec6818_led_exit(void)
+static void __exit gec6818_adc_exit(void)
 {
-	misc_deregister(&gec6818_led_miscdev);
+	misc_deregister(&gec6818_adc_miscdev);
 }
 
-module_init(gec6818_led_init);
-module_exit(gec6818_led_exit);
+module_init(gec6818_adc_init);
+module_exit(gec6818_adc_exit);
 
 MODULE_AUTHOR("yonghui.lee <yonghuilee.cn@gmail.com>");
 MODULE_DESCRIPTION("GEC6818 LED Device Driver");
