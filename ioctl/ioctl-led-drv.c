@@ -12,7 +12,7 @@
  * 		打开设备LED和K, 使用ioctl执行指令去读K设备值或写LED设备值
  *		
  * @Date: 2019-05-01 15:47:55
- * @LastEditTime: 2019-05-01 22:14:19
+ * @LastEditTime: 2019-05-06 00:14:49
  */
 
 #include <linux/kernel.h>
@@ -151,21 +151,41 @@ static struct miscdevice gec6818_led_miscdev={
 
 static int __init gec6818_led_init(void)
 {
-	int ret=misc_register(&gec6818_led_miscdev);
-	if(ret<0)
-	{
-		printk("misc_register failed\n");
-		goto register_failed;
-	}
+	int i=0,ret=-1;
+	//释放将要使用的gpio
+	for(i=0;i<4;++i)
+		gpio_free(led_info_tab[i].num);
+	//申请gpio
+	for(i=0;i<4;++i)
+		ret=gpio_request(led_info_tab[i].num, led_info_tab[i].name);
 	
+	if(ret<0)
+		goto gpio_request_failed;
+
+	ret=misc_register(&gec6818_led_miscdev);
+	if(ret<0)
+		goto register_failed;
+	printk("installed led_drv\n");
 
 register_failed:
-	return -1;
+	printk("misc_register failed\n");
+	misc_deregister(&gec6818_led_miscdev);
+
+gpio_request_failed:
+	printk("gpio_request failed\n");
+	for(i=0;i<4;++i)
+		gpio_free(led_info_tab[i].num);
+
+	return ret;
 }
 
 static void __exit gec6818_led_exit(void)
 {
+	int i=0;
 	misc_deregister(&gec6818_led_miscdev);
+	for(i=0;i<4;++i)
+		gpio_free(led_info_tab[i].num);
+	printk("remove led_drv\n");
 }
 
 module_init(gec6818_led_init);

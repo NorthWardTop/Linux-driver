@@ -4,13 +4,13 @@
  * @LastEditors: northward
  * @Description: 本应用程序用于测试LED和KEY驱动程序
  * @Date: 2019-05-01 15:48:23
- * @LastEditTime: 2019-05-05 23:40:29
+ * @LastEditTime: 2019-05-05 23:56:35
  */
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <ioctl.h>
+#include <sys/ioctl.h>
 #include "key-led.h"
 
 
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 		ret=ioctl(fd_key, GEC6818_KALL_STAT, &kval);
 		if(ret<0) {
 			perror("ioctl error\n");
-			return -1;
+			continue;
 		}
 
 		//k2 k3 k4 k5

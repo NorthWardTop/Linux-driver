@@ -12,7 +12,7 @@
  * 		打开设备LED和K, 使用ioctl执行指令去读K设备值或写LED设备值
  *		
  * @Date: 2019-05-01 15:47:55
- * @LastEditTime: 2019-05-01 22:24:17
+ * @LastEditTime: 2019-05-06 00:14:16
  */
 
 #include <linux/kernel.h>
@@ -184,7 +184,7 @@ static int __init gec6818_key_init(void)
 	if(ret<0)
 		goto register_failed;
 	
-
+	printk("installed key_drv\n");
 register_failed:
 	printk("misc_register failed\n");
 	misc_deregister(&gec6818_key_miscdev);
@@ -203,7 +203,7 @@ static void __exit gec6818_key_exit(void)
 	misc_deregister(&gec6818_key_miscdev);
 	for(i=0;i<4;++i)
 		gpio_free(key_info_tab[i].num);
-	
+	printk("removed key_drv\n");
 }
 
 module_init(gec6818_key_init);
