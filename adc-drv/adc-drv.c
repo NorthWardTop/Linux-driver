@@ -12,7 +12,7 @@
  * 		打开设备LED和K, 使用ioctl执行指令去读K设备值或写LED设备值
  *		
  * @Date: 2019-05-01 15:47:55
- * @LastEditTime: 2019-05-10 00:18:59
+ * @LastEditTime: 2019-05-10 01:37:47
  */
 
 #include <linux/kernel.h>
@@ -26,12 +26,12 @@
 #include <linux/errno.h>
 #include <linux/io.h>
 #include <linux/gpio.h>
-#include <cfg_type.h>
+#include <linux/types.h>
 #include <linux/miscdevice.h>
 #include <linux/ioctl.h>
 #include <linux/ioport.h>
 
-
+//读取电压, R
 #define GEC6818_ADC_IN0			_IOR('A', 1, unsigned long)
 #define GEC6818_ADC_IN1			_IOR('A', 2, unsigned long)
 
@@ -39,10 +39,10 @@
 
 
 
-// static struct cdev gec6818_adc_cdev;
-// static dev_t dev_num;
-// static struct class *adc_class;
-// static struct device *adc_device;
+static struct cdev gec6818_adc_cdev;
+static dev_t adc_num;
+static struct class *adc_class;
+static struct device *adc_device;
 
 
 
@@ -67,20 +67,44 @@ static void __iomem *adc_pre_va; //预分频寄存器
 
 long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 {
-	//获取当前LED灯下标
-	unsigned long index=arg-7;
-	switch(cmd)
-	{
-		case GEC6818_LED_ON:
-			gpio_set_value(led_info_tab[index].num, 0);
+	int ret=0;
+	unsigned int adc_val = 0, adc_vol = 0;
+
+	switch (cmd) {
+		case GEC6818_ADC_IN0:
+			//选择设备CON[3:5]
+			//con 3-5清零 &(~(111 << 3)), 
+			iowrite32(ioread32(adc_con_va) & (~(7 << 3)), adc_con_va);
 			break;
-		case GEC6818_LED_OFF:
-			gpio_set_value(led_info_tab[index].num, 1);
+		case GEC6818_ADC_IN1:
+			//con 3-5清零 &(~(111 << 3)), 清零后设置001, |(1 << 3)
+			iowrite32(ioread32(adc_con_va) & (~(7 << 3)), adc_con_va);
+			iowrite32(ioread32(adc_con_va) | (1 << 3), adc_con_va);
 			break;
 		default:
-			return -ENOIOCTLCMD;
+			ret = -EINVAL;
 	}
-	return 0;
+	//开启ADC电源 CON[2] = 0
+	iowrite32(ioread32(adc_con_va) & (~(1 << 2)), adc_con_va);
+	//配置分频值200, adc_clk_in = 200MHz/200 = 1MHz , PRE[0:9]
+	iowrite32(ioread32(adc_pre_va) & (~(0x3ff)), adc_pre_va); //清空0-9
+	iowrite32(ioread32(adc_pre_va) | (199+1), adc_pre_va);
+	//使能预分频值
+	iowrite32(ioread32(adc_pre_va) | (1 << 15), adc_pre_va);
+	//使能adc
+	iowrite32(ioread32(adc_con_va) | (1 << 0), adc_con_va);
+	//等待转换结束 CON[0] == 0 结束循环
+	while (ioread32(adc_con_va) & (1 << 0));
+	//获取结果, 取0-11位
+	adc_val = ioread32(adc_dat_va) & 0xfff;
+	//结果计算为电压值, 供电电压1.8V   4095/1800mV = val/电压
+	adc_vol = adc_val*1800/4095;
+	//copy_to_user
+	ret = copy_to_user((void*)arg, &adc_vol, sizeof(adc_vol));
+	if (ret < 0)
+		ret = -EFAULT;
+
+	return ret;
 }
 
 
@@ -89,10 +113,10 @@ long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 //打开
 static int gec6818_adc_open(struct inode *ino, struct file *f)
 {
-	int i=0;
-	//配置对应gpio为输出模式
-	for(;i<4;++i)
-		gpio_direction_output(led_info_tab[i].num, 1);
+	// int i=0;
+	// //配置对应gpio为输出模式
+	// for(;i<4;++i)
+	// 	gpio_direction_output(led_info_tab[i].num, 1);
 	printk("LED device opened!\n");
 	return 0;
 }
@@ -106,19 +130,31 @@ static int gec6818_adc_release(struct inode *i, struct file *f)
 
 static const struct file_operations gec6818_adc_fops={
 	.owner		= THIS_MODULE,
-	.write		= gec6818_adc_write,
-	.read 		= gec6818_adc_read,
 	.open		= gec6818_adc_open,
 	.release 	= gec6818_adc_release,
 	.unlocked_ioctl = gec6818_adc_ioctl
 };
 
-static struct miscdevice gec6818_adc_miscdev={
-	.minor		= MISC_DYNAMIC_MINOR,
-	.name		= DEVICE_NAME,
-	.fops		= &gec6818_adc_fops
-};
+// static struct miscdevice gec6818_adc_miscdev={
+// 	.minor		= MISC_DYNAMIC_MINOR,
+// 	.name		= DEV_NAME,
+// 	.fops		= &gec6818_adc_fops
+// };
 
+
+/**
+ * @description: 设备插入初始化
+ * 1.申请设备号
+ * 2.字符设备初始化
+ * 3.字符设备添加到内核
+ * 4.创建类
+ * 5.创建设备
+ * 
+ * 6.申请物理地址(驱动直接操作物理地址)
+ * 7.物理映射到虚拟地址
+ * @param {type} 
+ * @return: 
+ */
 static int __init gec6818_adc_init(void)
 {
 	int ret = 0;
@@ -146,7 +182,7 @@ static int __init gec6818_adc_init(void)
 	}
 	//创建设备
 	adc_device = device_create(adc_class, NULL, adc_num, NULL, DEV_NAME);
-	if(ISERR(adc_device)) {
+	if(IS_ERR(adc_device)) {
 		ret = PTR_ERR(adc_device);
 		printk("device_create fail\n");
 		goto device_create_fail;
@@ -180,7 +216,7 @@ request_mem_region_fail:
 	device_destroy(adc_class, adc_num);
 device_create_fail:
 	//取消类注册
-	class_destroy(adc_class, adc_num);
+	class_destroy(adc_class);
 class_create_fail:
 	//删除内核设备
 	cdev_del(&gec6818_adc_cdev);
@@ -190,10 +226,20 @@ cdev_add_fail:
 	return ret;
 }
 
+/**
+ * @description: 设备移除清理
+ * @param {type} 
+ * @return: 
+ */
 static void __exit gec6818_adc_exit(void)
 {
-	iounmap(adc_base_va);
-	misc_deregister(&gec6818_adc_miscdev);
+	iounmap(adc_base_va); //取消映射
+	release_mem_region(0xC0053000, 0x14); //取消物理地址
+	device_destroy(adc_class, adc_num); //注销设备
+	class_destroy(adc_class); //注销类
+	cdev_del(&gec6818_adc_cdev); //删除内核设备
+	unregister_chrdev_region(adc_num, 1); //释放设备号
+
 	printk("gec6818 adc exit\n");
 }
 
