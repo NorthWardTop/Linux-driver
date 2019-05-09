@@ -4,18 +4,19 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "F:/SI/pak/include/**",
-                "F:/SI/pak/include/",
-                "F:/SI/pak/include/**"
+                "F:/SI/pak/6818inc/include/**",
+                "F:/SI/pak/include/x86_64-linux-gnu",
+                "F:/SI/pak/include/linux",
+                "F:/SI/pak/include/"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:\\\\\\\\MinGW\\\\\\\\bin\\\\\\\\g++.exe",
+            "compilerPath": "D:/Program Files/yagarto/binarm-none-eabi-gcc.exe",
             "cppStandard": "c++17",
-            "intelliSenseMode": "gcc-x64",
+            "intelliSenseMode": "${default}",
             "cStandard": "c11"
         }
     ],

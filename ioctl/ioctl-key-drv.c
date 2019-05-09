@@ -12,7 +12,7 @@
  * 		打开设备LED和K, 使用ioctl执行指令去读K设备值或写LED设备值
  *		
  * @Date: 2019-05-01 15:47:55
- * @LastEditTime: 2019-05-06 00:14:16
+ * @LastEditTime: 2019-05-09 18:52:24
  */
 
 #include <linux/kernel.h>
@@ -29,15 +29,10 @@
 #include <cfg_type.h>
 #include <linux/miscdevice.h>
 #include <linux/ioctl.h>
+#include "key-led.h"
 
 
 #define DEVICE_NAME				"KEYs"
-
-#define GEC6818_KEY2_STAT		_IOR('K', 1, unsigned long)
-#define GEC6818_KEY3_STAT		_IOR('K', 2, unsigned long)
-#define GEC6818_KEY4_STAT		_IOR('K', 3, unsigned long)
-#define GEC6818_KEY5_STAT		_IOR('K', 4, unsigned long)
-#define GEC6818_KALL_STAT		_IOR('K', 5, unsigned long)
 
 struct key_gpio_info{
 	unsigned int num;
@@ -97,7 +92,7 @@ long gec6818_key_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 static ssize_t gec6818_key_write(struct file *fl, const char __user *buf, size_t len, loff_t *off)
 {
 	int ret=-1;
-	char kbuf[64]={};
+	char kbuf[64]="";
 	printk("KEY device writing...\n");
 	if(len>sizeof kbuf) //如果内核空间小装不下用户空间参数则报错
 		return -EINVAL;//参数

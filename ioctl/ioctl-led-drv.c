@@ -29,13 +29,10 @@
 #include <cfg_type.h>
 #include <linux/miscdevice.h>
 #include <linux/ioctl.h>
-
+#include "key-led.h"
 
 #define DEVICE_NAME			"LEDs"
 #define LED_MINOR			131
-
-#define GEC6818_LED_ON		_IOW('L', 1, unsigned long)
-#define GEC6818_LED_OFF		_IOW('L', 2, unsigned long)
 
 struct led_gpio_info{
 	unsigned int num;
