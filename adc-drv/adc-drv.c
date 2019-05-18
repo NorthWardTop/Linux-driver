@@ -12,7 +12,7 @@
  * 		打开设备LED和K, 使用ioctl执行指令去读K设备值或写LED设备值
  *		
  * @Date: 2019-05-01 15:47:55
- * @LastEditTime: 2019-05-10 01:37:47
+ * @LastEditTime: 2019-05-13 19:57:39
  */
 
 #include <linux/kernel.h>
@@ -68,7 +68,7 @@ static void __iomem *adc_pre_va; //预分频寄存器
 long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 {
 	int ret=0;
-	unsigned int adc_val = 0, adc_vol = 0;
+	unsigned long adc_val = 0, adc_vol = 0;
 
 	switch (cmd) {
 		case GEC6818_ADC_IN0:
@@ -87,8 +87,8 @@ long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 	//开启ADC电源 CON[2] = 0
 	iowrite32(ioread32(adc_con_va) & (~(1 << 2)), adc_con_va);
 	//配置分频值200, adc_clk_in = 200MHz/200 = 1MHz , PRE[0:9]
-	iowrite32(ioread32(adc_pre_va) & (~(0x3ff)), adc_pre_va); //清空0-9
-	iowrite32(ioread32(adc_pre_va) | (199+1), adc_pre_va);
+	iowrite32(ioread32(adc_pre_va) & (~(0x3FF<<0)), adc_pre_va); //清空0-9
+	iowrite32(ioread32(adc_pre_va) | (199), adc_pre_va);
 	//使能预分频值
 	iowrite32(ioread32(adc_pre_va) | (1 << 15), adc_pre_va);
 	//使能adc
@@ -97,10 +97,17 @@ long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 	while (ioread32(adc_con_va) & (1 << 0));
 	//获取结果, 取0-11位
 	adc_val = ioread32(adc_dat_va) & 0xfff;
+
+	//关闭CLKIN时钟输入
+	iowrite32(ioread32(adc_pre_va)&(~(1<<15)),adc_pre_va);
+	
+	//关闭ADC电源
+	iowrite32(ioread32(adc_con_va)|(1<<2),adc_con_va);
+
 	//结果计算为电压值, 供电电压1.8V   4095/1800mV = val/电压
 	adc_vol = adc_val*1800/4095;
 	//copy_to_user
-	ret = copy_to_user((void*)arg, &adc_vol, sizeof(adc_vol));
+	ret = copy_to_user((void*)arg, &adc_vol, 4);
 	if (ret < 0)
 		ret = -EFAULT;
 
