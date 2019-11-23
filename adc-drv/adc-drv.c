@@ -98,6 +98,8 @@ long gec6818_adc_ioctl(struct file *fl, unsigned int cmd, unsigned long arg)
 	//获取结果, 取0-11位
 	adc_val = ioread32(adc_dat_va) & 0xfff;
 
+
+
 	//关闭CLKIN时钟输入
 	iowrite32(ioread32(adc_pre_va)&(~(1<<15)),adc_pre_va);
 	
