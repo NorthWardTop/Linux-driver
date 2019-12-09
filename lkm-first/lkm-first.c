@@ -15,6 +15,7 @@
 #include <linux/slab.h>
 #include <linux/uaccess.h>
 #include <linux/fs.h>
+#include <linux/atomic.h>
 
 
 #define LKM_NAME 		"lkm_memory"
@@ -29,6 +30,8 @@ struct lkm_mem_dev {
 	struct class *dev_class;
 	u_char *memory;
 	ushort len; //current data length
+	//并发控制原子变量
+	atomic_t open_count;
 };
 
 static struct lkm_mem_dev *pmem_dev;
@@ -36,18 +39,76 @@ static struct lkm_mem_dev *pmem_dev;
 
 static int lkm_mem_open(struct inode *inode, struct file *filp)
 {
+	int ret = 0;
 	//注册对象: 将设备文件的私有数据域指向对象
 	filp->private_data = pmem_dev;
-	printk(KERN_INFO"lkm_mem_dev is opened\n");
-	return 0;
+	//并发控制, 测试并自减
+	ret = atomic_dec_and_test(&pmem_dev->open_count);
+	if (!ret) {
+		printk("lkm_mem_dev busy\n");
+		atomic_inc(&pmem_dev->open_count);
+		ret = -EBUSY;
+	} else 
+		printk(KERN_INFO"lkm_mem_dev is opened\n");
+	return ret;
 }
 
 
 static int lkm_mem_release(struct inode *ino, struct file *filp)
 {
+	struct lkm_mem_dev *dev = (struct lkm_mem_dev*)filp->private_data;
 	filp->private_data = NULL;
+	atomic_inc(&dev->open_count);
 	printk(KERN_INFO"lkm_mem_dev is closed\n");
 	return 0;
+}
+
+
+static ssize_t lkm_mem_read(struct file *filp, char __user *buf, size_t len, loff_t *pos)
+{
+	unsigned long ptmp = *pos;
+	unsigned int count = len;
+	int 		   ret = 0;
+	struct lkm_mem_dev *dev = (struct lkm_mem_dev*)filp->private_data;
+
+	printk("lkm_mem_read\n");
+	if (ptmp == 0) 
+		return 0;
+	if (count > ptmp) //读取长度大于最大长度
+		count = ptmp;
+	ret = copy_to_user(buf, dev->memory+ptmp, count);
+	if (ret != 0)
+		ret = -EFAULT;
+	else {
+		*pos -= count;
+		ret = count;
+		printk("read %u complete!\n", count);
+	}
+	return ret;
+}
+
+
+static ssize_t lkm_mem_write(struct file *filp, const char __user *buf, size_t len, loff_t *pos)
+{
+	unsigned long ptmp = *pos;
+	unsigned int count = len;
+	int 		   ret = 0;
+	struct lkm_mem_dev *dev = (struct lkm_mem_dev*)filp->private_data;
+
+	printk("lkm_mem_write\n");
+	if (ptmp >= LKM_MEM_SIZE)
+		return 0;
+	if (count > LKM_MEM_SIZE - ptmp)
+		count = LKM_MEM_SIZE - ptmp;
+	ret = copy_from_user(dev->memory + ptmp, buf, count);
+	if (ret != 0)
+		ret = -EFAULT;
+	else {
+		*pos += count;
+		ret = count;
+		printk("lkm_mem_write\n");
+	}
+	return ret;
 }
 
 
@@ -55,8 +116,8 @@ static struct file_operations lkm_mem_fops = {
 	.owner = THIS_MODULE,
 	.open = lkm_mem_open,
 	.release = lkm_mem_release,
-	// .read = lkm_mem_read,
-	// .write = lkm_mem_write,
+	.read = lkm_mem_read,
+	.write = lkm_mem_write,
 };
 
 static int setup_dev(struct lkm_mem_dev* dev, int index)
@@ -64,6 +125,7 @@ static int setup_dev(struct lkm_mem_dev* dev, int index)
 	dev->minor = index; //设置具体设备号, 次设备号
 	memset(dev->memory, 0, LKM_MEM_SIZE);
 	dev->len = 0;
+	atomic_inc(&pmem_dev->open_count);
 	return true;
 }
 
@@ -151,12 +213,5 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("yonghuilee.cn@gmail.com");
 MODULE_DESCRIPTION("LKM first process");
 MODULE_VERSION("1.0");
-
-
-
-
-
-
-
 
 
