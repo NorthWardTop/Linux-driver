@@ -1,5 +1,22 @@
 {
     "files.associations": {
-        "fstream": "c"
-    }
+        "fstream": "c",
+        "array": "c",
+        "string": "c",
+        "current.h": "c",
+        "signal.h": "c",
+        "errno.h": "c",
+        "fs.h": "c",
+        "sstream": "c",
+        "typeinfo": "c",
+        "interrupt.h": "c",
+        "gpio.h": "c"
+    },
+    "[c]": {
+        "editor.detectIndentation": false,
+        "editor.tabSize": 8,
+        "editor.insertSpaces": false,
+        "editor.rulers": [80]
+    },
+    "C_Cpp.errorSquiggles": "Enabled"
 }

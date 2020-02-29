@@ -48,6 +48,10 @@ int write_test(int fd, char *buf, int len)
 	}
 }
 
+
+/**
+ * Linux实现底半部的机制主要有tasklet、工作队列、软中断和线程化irq。
+ */
 int main(int argc , char *argv[])
 {
 	int fd;

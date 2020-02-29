@@ -10,9 +10,11 @@
 #include <string.h>
 #include <strings.h>
 #include <sys/epoll.h>
+#include <linux/signal.h>
 #include <errno.h>
 
 #define MEM_SIZE        0x1000
+#define FIFO_CLEAR      0x1
 
 int main(int argc , char *argv[])
 {
@@ -63,6 +65,8 @@ int main(int argc , char *argv[])
         fprintf(stderr, "epoll_ctl EPOLL_CTL_DEL: %s\n", strerror(errno));
         return -errno;
     }
-    
+
+
+
     return 0;
 }

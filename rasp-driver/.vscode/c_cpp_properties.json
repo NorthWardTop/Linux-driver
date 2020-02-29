@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/media/lee/_dde_data/LinuxSrc/raspbian/include/**"
+                "/media/lee/_dde_data/LinuxSrc/linux-4.20.5/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",

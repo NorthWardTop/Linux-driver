@@ -84,6 +84,7 @@ static int lkm_mem_release(struct inode *ino, struct file *filp)
 	struct lkm_mem_dev *dev = (struct lkm_mem_dev*)filp->private_data;
 	filp->private_data = NULL;
 	atomic_inc(&dev->open_count);
+	lkm_mem_fasync(-1, filp, 0); //从异步通知列表删除
 	printk(KERN_INFO"lkm_mem_dev is closed\n");
 	return 0;
 }

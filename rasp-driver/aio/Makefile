@@ -14,6 +14,13 @@ all:
 clean:
 	rm -rf $(APP) *.ko *.o *.mod.o *.mod.c *.symvers  modul* .tmp_versions   .*.ko.cmd  .*.mod.o.cmd  .*.o.cmd
 
+
+app:
+	gcc -g -o main main.c -lrt
+	ls -l
+	./main
+	
+
 # ifneq ($(KERNELRELEASE),)
 
 # obj-m := hello.o
