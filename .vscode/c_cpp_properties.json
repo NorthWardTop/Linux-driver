@@ -3,11 +3,7 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**",
-                "F:/SI/pak/6818inc/include/**",
-                "F:/SI/pak/include/x86_64-linux-gnu",
-                "F:/SI/pak/include/linux",
-                "F:/SI/pak/include/"
+                "${workspaceFolder}/**"
             ],
             "defines": [
                 "_DEBUG",

@@ -10,7 +10,13 @@
         "sstream": "c",
         "typeinfo": "c",
         "interrupt.h": "c",
-        "gpio.h": "c"
+        "gpio.h": "c",
+        "timer.h": "c",
+        "slab.h": "c",
+        "uaccess.h": "c",
+        "string.h": "c",
+        "cerrno": "c",
+        "jiffies.h": "c"
     },
     "[c]": {
         "editor.detectIndentation": false,
