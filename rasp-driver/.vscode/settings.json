@@ -16,7 +16,8 @@
         "uaccess.h": "c",
         "string.h": "c",
         "cerrno": "c",
-        "jiffies.h": "c"
+        "jiffies.h": "c",
+        "dma-buf.h": "c"
     },
     "[c]": {
         "editor.detectIndentation": false,
