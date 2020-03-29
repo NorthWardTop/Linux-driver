@@ -17,7 +17,10 @@
         "string.h": "c",
         "cerrno": "c",
         "jiffies.h": "c",
-        "dma-buf.h": "c"
+        "dma-buf.h": "c",
+        "workqueue.h": "c",
+        "initializer_list": "cpp",
+        "utility": "cpp"
     },
     "[c]": {
         "editor.detectIndentation": false,
