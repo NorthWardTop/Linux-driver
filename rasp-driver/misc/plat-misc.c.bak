@@ -1,0 +1,196 @@
+
+
+/**
+ * globalfifo驱动挂接到platform总线上，这要完成两个工作。
+ * 1）将globalfifo移植为platform驱动。
+ * 2）在板文件中添加globalfifo这个platform设备。
+ * 为完成将globalfifo移植到platform驱动的工作，
+ * 需要在原始的globalfifo字符设备驱动中套一层platform_driver的外壳，
+ * 如代码清单12.6所示。注意进行这一工作后，并没有改变globalfifo是字符设备的本质，
+ * 只是将其挂接到了platform总线上。
+ */
+
+
+#include <linux/module.h>
+#include <linux/kernel.h>
+#include <linux/init.h>
+#include <linux/delay.h>
+#include <linux/export.h>
+#include <linux/file.h>
+#include <linux/blkdev.h>
+#include <linux/poll.h>
+#include <linux/cdev.h>
+#include <linux/jiffies.h>
+#include <linux/percpu.h>
+#include <linux/uio.h>
+#include <linux/idr.h>
+#include <linux/bsg.h>
+#include <linux/slab.h>
+#include <linux/uaccess.h>
+#include <linux/fs.h>
+#include <linux/atomic.h>
+#include <linux/types.h>
+#include <linux/wait.h>
+#include <linux/mutex.h>
+#include <linux/sched/signal.h>
+#include <linux/platform_device.h>
+#include <linux/miscdevice.h>
+
+#define LKM_NAME 		"lkm_memory"
+#define LKM_MEM_SIZE  	1024
+
+
+
+struct globalfifo_dev {
+	u_char *name; //device name
+	int major;
+	int minor;
+	struct file_operations *fops;
+	struct class *dev_class;
+	u_char *memory;
+	ushort len; //current data length
+
+	//并发控制原子变量
+	atomic_t open_count;
+	//自旋锁
+	spinlock_t slock;
+	struct mutex mutex;
+	//等待队列
+	wait_queue_head_t r_wait;
+	wait_queue_head_t w_wait;
+	//异步队列
+	struct fasync_struct *fasync;
+
+	//加入misc设备子对象
+	struct miscdevice miscdev;
+};
+
+static struct globalfifo_dev *globalfifo_devp;
+static struct platform_device *globalfifo_pdevp;
+
+
+static int globalfifo_fasync(int fd, struct file *filp, int mode)
+{
+	struct globalfifo_dev *dev = container_of(filp->private_data,
+		struct globalfifo_dev, miscdev);
+	pass;
+}
+
+static long globalfifo_ioctl(struct file *filp, unsigned int cmd,
+	unsigned long arg)
+{
+	struct globalfifo_dev *dev = container_of(filp->private_data,
+		struct globalfifo_dev, miscdev);
+	pass;
+}
+
+static unsigned int globalfifo_poll(struct file *filp, poll_table *wait)
+{
+	struct globalfifo_dev *dev = container_of(filp->private_data,
+		struct globalfifo_dev, misc);
+}
+
+static ssize_t globalfifo_read(struct file *filp, char __user *buf, 
+	size_t count, loff_t *ppos)
+{
+	struct globalfifo_dev *dev = container_of(filp->private_data, 
+		struct globalfifo_dev, miscdev);
+	
+}
+
+static int globalfifo_write(struct file *filp, const char __user *buf,
+	size_t count, loff_t *ppos)
+{
+	struct globalfifo_dev *dev = container_of(filp->private_data, 
+		struct globalfifo_dev, miscdev);
+}
+
+
+void globalfifo_setup_cdev(struct globalfifo_dev *dev, unsigned int major)
+{
+	dev->miscdev.minor = MISC_DYNAMIC_MINOR;
+	dev->miscdev.name = "globalfifo";
+	dev->miscdev.fops = &globalfifo_fops;
+
+	mutex_init(&dev->mutex);
+	init_waitqueue_head(&dev->r_wait);
+	init_waitqueue_head(&dev->w_wait);
+}
+
+
+static int globalfifo_probe(struct platform_device *pdev)
+{
+	int ret;
+	// dev_t devno = MKDEV(globalfifo_major, 0);
+
+	// if (globalfifo_major)
+	// 	ret = register_chrdev_region(devno, 1, "globalfifo");
+	// else {
+	// 	ret = alloc_chrdev_region(&devno, 0, 1, "globalfifo");
+	// 	globalfifo_major = MAJOR(devno);
+	// }
+	// if (ret < 0)
+	// 	return ret;
+
+	globalfifo_devp = devm_kzalloc(&pdev->dev, sizeof(*globalfifo_devp), 
+		GFP_KERNEL);
+	
+	if (!globalfifo_devp)
+		return -ENOMEM;
+
+	globalfifo_setup_cdev(globalfifo_devp, 0);
+	platform_set_drvdata(pdev, globalfifo_devp);
+
+	ret = misc_register(&globalfifo_dev->miscdev);
+	if (ret < 0)
+		return 0;
+}
+
+
+static int globalfifo_remove(struct platform_device *pdev)
+{
+	// cdev_del(&globalfifo_devp->cdev);
+	// unregister_chrdev_region(MKDEV(globalfifo_major, 0), 1);
+
+	struct globalfifo_dev *gl = platform_get_drvdata(pdev);
+	misc_deregister(&gl->miscdev);
+
+	return 0;
+}
+
+
+static struct platform_driver globalfifo_driver = {
+	.driver = {
+		.name = "globalfifo",
+		.owner = THIS_MODULE,
+	},
+	.probe = globalfifo_probe,
+	.remove = globalfifo_remove,
+};
+module_platform_driver(globalfifo_driver);
+
+
+
+static int __init globalfifo_init(void)
+{
+	int ret;
+	globalfifo_pdevp = platform_device_alloc("globalfifo", -1);
+	if (!globalfifo_pdevp)
+		return -ENOMEM;
+	
+	ret = platfrom_device_add(globalfifo_pdevp);
+	if (ret) {
+		platform_device_put(globalfifo_pdevp);
+		return ret;
+	}
+
+	return 0;
+}
+module_init(globalfifo_init);
+
+
+static void __exit globalfifo_exit(void)
+{
+	platform_device_unregister(globalfifo_pdevp);
+}
+module_exit(globalfifo_exit);

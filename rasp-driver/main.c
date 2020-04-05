@@ -11,3 +11,15 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
+
+
+
+kobject --------------------
+/     \                    \
+/       \                     \
+device     cdev                   driver
+/     \ (设备驱动操作方法)           \
+/       \                              \
+miscdevice         platform_device       platform_driver
+(设备驱动操作方法)    (设备的资源)          (设备驱动)
+
