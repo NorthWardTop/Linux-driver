@@ -168,16 +168,53 @@ struct bio {
 		struct page *bv_page;
 		unsigned int bv_len;
 		unsigned int bv_offset;
-	}
+	};
 
 	struct bio_vec bi_inline_vecs[0];
-}
+};
+
+////////////////////////////////request and queue操作部分
 
 // 初始化请求队列, 请求处理函数指针, 控制访问队列的自旋锁, 在块设备初始化时候调用, 检查返回值
 struct request_queue *blk_init_queue(request_fn_proc *rfn, spinlock_t *lock);
+
 // 清除请求队列, 在驱动卸载时候使用
 void blk_cleanup_queue(struct request_queue *q);
-// 分配请求队列
+
+// 分配请求队列 & 绑定queue和make_request_fn
 struct request_queue *blk_alloc_queue(gfp_t gfp_mask);
+void blk_queue_make_request(struct request_queue *q, make_request_fn *mfn); //绕过调度器
+
+// 提取请求, 返回下一个要处理的请求, 由调度器决定返回哪个, 如果返回NULL则请求仍然存在
+struct request *blk_peek_request(struct request_queue *q);
+
+// 启动请求, 从队列移除请求
+void blk_start_request(struct request *req);
+// fetch = peek + start
+struct request *blk_fetch_request(struct request_queue *q);
+
+// 遍历
+__rq_for_each_bio(_bio, rq); // 遍历一个请求的所有bio
+
+__bio_for_each_segment(bvl, bio, iter, start); // 遍历一个bio的所有bio_vec
+bio_for_each_segment(bvl, bio, iter);
+
+rq_for_each_segment(bvl, _rq, _iter); // 遍历一个请求所有bio的所有bio_vec
+
+// 报告请求完成否, error=0完成
+void blk_end_request_all(struct request *rq, blk_status_t error);
+void __blk_end_request_all(struct request *rq, blk_status_t error); // 在持有队列锁时候调用
+void bio_endio(struct bio *bio); // 如果blk_queue_make_request绕过调度器则需这样通知结束
+void bio_endio_error(bio); // IO 错误上报错误
 
 
+/**
+ * 调度器
+ * 	Noop I/O // FIFO不排序只合并, 适合flash
+ * 	Anticipatory I/O // 2010年弃用
+ * 	Deadline I/O // 适合读取较多的环境如数据库
+ * 	CFQ I/O // 所有任务平均分配均与IO带宽, 多媒体中保证音视频及时读取
+ * 更改调度器:
+ * 	启动参数: kernel elevatot=deadline
+ * 	命令: echo deadline > /sys/block/sda/queue/scheduler
+ */
