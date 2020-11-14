@@ -20,7 +20,17 @@
         "dma-buf.h": "c",
         "workqueue.h": "c",
         "initializer_list": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "rspi.h": "c",
+        "kernel.h": "c",
+        "genhd.h": "c",
+        "bit": "c",
+        "compare": "c",
+        "cstddef": "c",
+        "list": "c",
+        "limits": "c",
+        "memory": "c",
+        "new": "c"
     },
     "[c]": {
         "editor.detectIndentation": false,
@@ -28,5 +38,5 @@
         "editor.insertSpaces": false,
         "editor.rulers": [80]
     },
-    "C_Cpp.errorSquiggles": "Enabled"
+    "C_Cpp.errorSquiggles": "Disabled"
 }

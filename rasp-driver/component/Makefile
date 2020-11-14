@@ -12,7 +12,7 @@ all:
 	scp $(TARGET) $(APP) pi@192.168.1.120:/home/pi/mod
 
 clean:
-	rm -rf $(APP) *.ko *.o *.mod.o *.mod.c *.symvers  modul* .tmp_versions   .*.ko.cmd  .*.mod.o.cmd  .*.o.cmd
+	make -C $(KDIR) M=$(PWD) clean
 
 
 # ifneq ($(KERNELRELEASE),)
