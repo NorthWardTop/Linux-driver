@@ -14,92 +14,292 @@
 
 
 
+#include <linux/module.h>
+#include <linux/moduleparam.h>
+#include <linux/init.h>
+#include <linux/sched.h>
+#include <linux/kernel.h>
+#include <linux/slab.h>        
+#include <linux/fs.h>
+#include <linux/hdreg.h>
+#include <linux/genhd.h>
+#include <linux/blkdev.h>
+#include <linux/bio.h>
 
-#include  <linux/spinlock_types.h>
-#include  <linux/blkdev.h>
-#include  <linux/module.h>
-#include  <linux/kernel.h>
-#include  <linux/fs.h>
-#include  <linux/genhd.h>
-#include  <linux/init.h>
+/**
+ * size = NSECTORS*HARDSECT_SIZE;
+ */
+#define HARDSECT_SIZE		512	/*  */
+#define NSECTORS		1024	/* sectors number */
+#define NDEVICES		4	/* device number(partition) */
+
+#define VMEM_DISK_MINORS	16
+#define KERNEL_SECTOR_SIZE	512
+
+enum {
+	VMEMD_QUEUE = 0, /* Use request_queue */
+	VMEMD_NOQUEUE = 1, /* Use make_request */
+};
+
+static int request_mode = VMEMD_QUEUE;
+static int vmem_disk_major;
+
+module_param(request_mode, int, 0);
+module_param(vmem_disk_major, int, 0); //加载时候可选major
+
+struct vmem_disk_dev {
+	int size;		/* Device size in sectors */
+	u8 *data;		/* The data array */
+	spinlock_t lock;	/* For mutual exclusion */
+	struct request_queue *queue;	/* The device request queue */
+	struct gendisk *gd;	/* The gendisk struct */
+};
+
+static struct vmem_disk_dev *devices;
 
 
-#define DISK_MAJOR		255
 
-
-
-
-static int xxx_open(struct block_device *bdev, fmode_t mode)
+static int vmem_disk_open(struct block_device *bdev, fmode_t mode)
 {
-	struct xxx_dev *dev = bdev->bd_disk->private_data;
+	struct vmem_disk_dev *dev = bdev->bd_disk->private_data;
 
 	return 0;
 }
 
 
-static void xxx_release(struct gendisk *disk, fmode_t mode)
+static void vmem_disk_release(struct gendisk *disk, fmode_t mode)
 {
-	struct xxx_dev *dev = disk->private_data;
+	struct vmem_disk_dev *dev = disk->private_data;
 }
 
 
-static int mmc_blk_ioctl(struct block_device *bdev, fmode_t mode,
-	unsigned int cmd, unsigned long arg)
+static void vmem_disk_transfer(struct vmem_disk_dev *dev, unsigned long secor, 
+	unsigned long nsect, char *buffer, int direction)
 {
-	int ret = -EINVAL;
-	if (cmd == MMC_IOC_CMD)
-		ret = mmc_blk_ioctl_cmd(bdev, (struct mmc_ioc_cmd __user*)arg);
-	return ret;
-}
+	unsigned long offset = sector*KERNEL_SECTOR_SIZE;
+	unsigned long nbytes = nsect*KERNEL_SECTOR_SIZE;
 
-
-static int disk_init(void)
-{
-	int err = 0;
-	struct request_queue *disk_queue;
-	
-	// 注册设备
-	err = register_blkdev(DISK_MAJOR, "disk");
-	if (err < 0) {
-		err = -EIO;
-		goto out;
+	if (offset + nbytes > dev->size) {
+		printk(KERN_NOTICE "Beyond-end pos: %ld, len: %ld", offset, nbytes);
+		return;
 	}
 
-	// 请求队列初始化
-	disk_queue = blk_init_queue(disk_queue, disk_lock);
-	if (!disk_queue)
-		goto out_queue;
-	blk_queue_max_hw_sectors(disk_queue, 255);
-	blk_queue_logical_block_size(disk_queue, 512);
+	/**
+	 * Complete the final hardware I/O operation here, per sector
+	 * In this example is memcpy 
+	 */
+	if (direction == WRITE)
+		memcpy(dev->data + offset, buffer, nbytes);
+	else
+		memcpy(buffer, dev->data + offset, nbytes);
+}
+
+static int vmem_disk_xfer_bio(struct vmem_disk_dev *dev, struct bio *bio)
+{
+	struct bio_vec bvec; /* vector */
+	struct bvce_iter iter;	/* each one */
+	sector_t sector = bio->bi_iter.bi_sector;
+
+	/* iterate through each segment */
+	bio_for_each_segment(bvec, bio, iter) {
+		char *buffer = __bio_kmap_atomic(bio, iter);
+		
+		vmem_disk_transfer(dev, sector, bio_cur_bytes(bio) / HARDSECT_SIZE, buffer, bio_data_dir(bio));
+		sector += bio_cur_bytes(bio) / HARDSECT_SIZE;
+		__bio_kunmap_atomic(buffer);
+	}
+
+	return 0;
+}
+
+/**
+ * queue mode - NOQUEUE
+ * vmem_disk_make_request(q)->vmem_disk_xfer_bio(bio)->vmem_disk_transfer(sector)
+ * Unit is bio
+ */
+static void vmem_disk_make_request(struct request_queue *q, struct bio *bio)
+{
+	struct vmem_disk_dev *dev = q->queuedata;
+	int status;
+
+	status = vmem_disk_xfer_bio(dev, bio);
+	bio_endio(bio, status);
+}
+
+/**
+ * queue mode - QUEUE 
+ * vmem_disk_request(q)->vmem_disk_xfer_bio(bio)->vmem_disk_transfer(sector)
+ * Unit is one by one request
+ */
+static void vmem_disk_request(struct request_queue *q)
+{
+	struct request *req;
+	struct bio *bio;
+
+	/* Take out requests in order */
+	while ((req = blk_peek_request(q) != NULL)) {
+		struct vmem_disk_dev *dev = req->rq_disk->private_data;
+		if (req->cmd_tyte != REQ_TYPE_FS) {
+			printk(KERN_NOTICE "Skip non-fs request\n");
+			blk_start_request(req);
+			__blk_end_request_all(req, -EIO);
+			continue;
+		}
+
+		blk_start_request(req);
+		__rq_for_each_bio(bio, req)
+			vmem_disk_xfer_bio(dev, bio);
+		__blk_end_request_all(req, 0);
+	}
+}
+
+
+
+static int vmem_disk_getgeo(struct block_device *bdev, struct hd_geometry *geo)
+{
+	long size;
+	struct vmem_disk_dev *dev = bdev->bd_disk->private_data;
+
+	size = dev->size*(HARDSECT_SIZE / KERNEL_SECTOR_SIZE);
+	geo->cylinders = (size & ~0x3f) >> 6; /* What's this */
+	geo->heads = 4;
+	geo->sectors = 16;
+	geo->start = 4;
+
+	return 0;
+}
+
+
+static struct block_device_operations vmem_disk_ops = {
+	.open = vmem_disk_open,
+	.release = vmem_disk_release,
+	.getgeo		= vmem_disk_getgeo,
+}
+
+
+static void setup_device(struct vmem_disk_dev *dev, int which)
+{
+	memset(dev, 0, sizeof(struct vmem_disk_dev));
+	dev->size = NSECTORS*HARDSECT_SIZE;
+	dev->data = vmalloc(dev->size); /* alloc disk space */
 	
-	// gendisk初始化
-	disk_disks->major = DISK_MAJOR;
-	disk_disks->first_minor = 0;
-	disk_dosks->fops = &xxx_op;
-	disk_disks->queue = disk_queue;
-	sprintf(disk_disks->disk_name, "disk%d", i);
-	set_capacity(disk_disks, size * 2);
-	add_disk(disk_disks); // 注册对象
+	if (dev->data == NULL) {
+		printk(KERN_NOTICE "malloc falied.\n");
+		return;
+	}
+
+	spin_lock_init(&dev->lock);
+
+	/**
+	 * request_mode depening on whether we are using our own queue
+	 */
+	switch (request_mode) {
+	case VMEMD_NOQUEUE:
+		dev->queue = blk_alloc_queue(GFP_KERNEL);
+		if (dev->queue == NULL)
+			goto queue_falied;
+		
+		/* binding request_make and funtion */
+		blk_queue_make_request(dev->queue, vmem_disk_make_request);
+		break;
+
+	case VMEMD_QUEUE:
+		/* binding request handler function */
+		dev->queue = blk_init_queue(vmem_disk_request, &dev->lock);
+		if (dev->queue == NULL)
+			goto queue_falied;
+		break;
+	default:
+		printk(KERN_NOTICE "Unknow request mode: %d.\n", request_mode);
+	}
+
+	blk_queue_logical_block_size(dev->queue, HARDSECT_SIZE); /* 512 per sector */
+	dev->queue->queuedata = dev;
+
+	dev->gd = alloc_disk(VMEM_DISK_MINORS); /* alloc one general disk */
+	if (!dev->gd) {
+		printk(KERN_NOTICE "Alloc general disk failed");
+		goto alloc_disk_falied;
+	}
+
+	dev->gd->major = vmem_disk_major;
+	dev->gd->first_minor = which*VMEM_DISK_MINORS;
+	dev->gd->queue = dev->queue;
+	dev->gd->private_data = dev;
+	snprintf(dev->gd->disk_namem, 32, "vmem_disk%c", which + 'a');
+	set_capacity(dev->gd, NSECTORS * (HARDSECT_SIZE / KERNEL_SECTOR_SIZE));
+	add_disk(dev->gd);
+
+	return;
+
+alloc_disk_falied:
+queue_falied:
+	if (dev->data)
+		vfree(dev->data);
+}
+
+
+static int vmem_disk_init(void)
+{
+	int i;
+
+	vmem_disk_major = register_blkdev(vmem_disk_major, "vmem_disk");
+	if (vmem_disk_major <= 0) {
+		printk(KERN_WARNING "vmem_disk: Unbale to get major number\n");
+		return -EBUSY;
+	}
+
+	devices = kmalloc(NDEVICES*sizeof(struct vmem_disk_dev), GFP_KERNEL);
+	if (!devices)
+		goto malloc_filed;
+	
+	for (i = 0; i < NDEVICES; ++i)
+		setup_device(devices + i, i);  /* One by one initial device */
+	
+
 	return 0;
 
-out_queue:
-	unregister_blkdev(DISK_MAJOR, "xxx");
-out:
-	put_disk(disk_disks);
-	blk_cleanup_queue(disk_queue);
-
+malloc_filed:
+	unregister_blkdev(vmem_disk_major, "vmem_disk");
 	return -ENOMEM;
-
 }
 
-
-static void disk_exit(void)
+static void vmem_disk_exit(void)
 {
-	blk_cleanup_queue(disk_queue); // 清理请求队列
-	put_disk(disk_disks); //删除对disk的引用
-	unregister_blkdev(DISK_MAJOR, "xxx"); //注销块设备
+	int i;
+	
+	for (i = 0; i < NDECICES; ++i) {
+		struct vmem_disk_dev *dev = devices + i;
+
+		if (dev->gd) {
+			del_gendisk(dev->gd);
+			put_disk(dev->gd);
+		}
+
+		if (dev->queue) {
+			if (request_mode == VMEMD_NOQUEUE)
+				kobject_put(&dev->queue->kobj);
+			else
+				blk_cleanup_queue(dev->queue);
+		}
+
+		if (dev->data)
+			vfree(dev->data);
+	}
+
+	unregister_blkdev(vmem_disk_major, "vmem_disk");
+	kfree(devices);
 }
 
+
+module_init(vmem_disk_init);
+module_exit(vmem_disk_exit);
+
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("yonghuilee.cn@gmail.com");
+MODULE_DESCRIPTION("disk first process");
+MODULE_VERSION("1.0");
 
 /////////////////////////////////////////////////////////////////////////////////
 // gendisk: 通用磁盘
