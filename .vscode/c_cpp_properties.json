@@ -3,14 +3,16 @@
         {
             "name": "Win32",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/run/media/lee/backup-334GB/disk/kernel/linux-4.20.5-vscode/include/**",
+                "/run/media/lee/backup-334GB/disk/kernel/linux-4.20.5-vscode/include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "D:/Program Files/yagarto/binarm-none-eabi-gcc.exe",
+            "compilerPath": "/usr/bin/gcc",
             "cppStandard": "c++17",
             "intelliSenseMode": "${default}",
             "cStandard": "c11"

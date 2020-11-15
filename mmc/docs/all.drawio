@@ -1,0 +1,37 @@
+<mxfile host="65bd71144e" modified="2020-11-15T15:21:39.680Z" agent="5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.49.3 Chrome/83.0.4103.122 Electron/9.2.1 Safari/537.36" version="13.6.5" etag="IwmDD3X5LX_2hxKC3T7s">
+    <diagram id="z4y3rUoGQa2MRx9gW91J" name="Page-1">
+        <mxGraphModel dx="1134" dy="638" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="2" target="6">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="7">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="2" value="mmc file" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="260" y="170" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="&lt;span style=&quot;font-family: monospace&quot;&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;block.c&lt;br&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&quot;font-family: monospace&quot;&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;mmc_test.c&lt;br&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&quot;font-family: monospace&quot;&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;queue.c&lt;br&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&quot;font-family: monospace&quot;&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio_uart.c&lt;/span&gt;&lt;br&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="120" y="300" width="120" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="&lt;span style=&quot;font-family: monospace&quot;&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;bus.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;debugfs.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;mmc.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sd.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio_io.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio_ops.c&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;core.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;host.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;mmc_ops.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio_bus.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio_cis.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sdio_irq.c&lt;/span&gt;&lt;span style=&quot;color: #000000 ; background-color: #ffffff&quot;&gt; &amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-weight: bold ; color: #54ff54 ; background-color: #ffffff&quot;&gt;sd_ops.c&lt;/span&gt;&lt;br&gt;&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="257" y="290" width="126" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="7" value="HOST.c" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="400" y="300" width="120" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=-0.006;entryY=0.411;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" source="11" target="3">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="11" value="实现blk驱动和queue" style="text;html=1;resizable=0;autosize=1;align=center;verticalAlign=middle;points=[];fillColor=none;strokeColor=none;rounded=0;" vertex="1" parent="1">
+                    <mxGeometry x="30" y="270" width="120" height="20" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
